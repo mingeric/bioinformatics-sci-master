@@ -1,47 +1,74 @@
-# Bioinformatics SCI Master Skill
+# bioinformatics-sci-master
 
-**Evidence-first execution skill for SCI-grade computational biology papers.**
+An Agent Skill (SKILL.md format, Codex-compatible) for carrying a computational biology project from raw data to a submission-ready SCI manuscript. Install it, invoke `$bioinformatics-sci-master`, and it runs the project against a fixed set of evidence rules instead of whatever order the model happens to pick.
 
-A single Skill (Agent Skills / Codex-compatible) that turns one testable biological or clinical question into a coherent, independently supported, publication-grade computational study — with real computations, audited figures, machine-readable evidence tables, and manuscript text that all agree.
+It was built around one observation: papers that get rejected usually don't lack algorithms — they lack a question chain. XGBoost runs first, then someone goes looking for the biology afterwards. This skill does the reverse: every analysis has to answer the question left open by the previous one, and every number in the manuscript has to trace back to a table, a script, and a sample denominator.
 
-> **Core principle:** not "stack LASSO + WGCNA + XGBoost + SHAP + CellChat + virtual knockout", but every analysis answers the question left open by the previous one, forming an evidence chain that can be independently verified and written directly into an SCI paper.
+## Files
 
----
-
-## What it does
-
-| Capability | Reference file |
-|---|---|
-| Study design, endpoints, evidence tiers | `references/01-study-design-and-evidence.md` |
-| Algorithm selection & runnable analysis logic (ML, survival, WGCNA, scRNA-seq, spatial, perturbation, drug response) | `references/02-methods-and-algorithms.md` |
-| Publication figure layout & design rules | `references/03-figures-and-design.md` |
-| Natural, high-precision manuscript writing & review | `references/04-scientific-writing-and-review.md` |
-| Release, auditing, quality gates & truthful status reporting | `references/05-release-and-quality-gates.md` |
-| SMC5/6 human pan-cancer project profile (8 main + 4 supplementary figures) | `references/06-smc56-p1-profile.md` |
-| Verified source papers & living standards | `references/07-verified-sources.md` |
-| 117-candidate figure panel library | `references/08-figure-panel-library.md` |
-
-**Report standard** follows TRIPOD+AI / PROBAST+AI thinking for prediction-model reporting and bias review, plus biological-replicate principles for single-cell analysis.
-
-## Non-negotiable contract
-
-1. **Never invent** — no patients, p-values, AUCs, DEGs, cell annotations or validation. Every quantitative claim links to its exact source table, code, parameters and sample denominator.
-2. **Prevent leakage** — outcome-informed feature selection, preprocessing and hyperparameter tuning stay inside training folds; external cohorts untouched until model lock.
-3. **Separate evidence levels** — expression association ≠ adjusted association ≠ prediction ≠ network inference ≠ virtual perturbation ≠ experimentally supported causality. Claims are labeled accordingly.
-4. **Results precede writing** — tables → analyses → panels → legends → Results → Discussion → Abstract → title. No cherry-picking a storyline.
-5. **Truthful status** — COMPLETE / PARTIAL / BLOCKED / NOT RUN are reported accurately. Scaffolding alone never counts as a completed analysis.
-
-## Installation (Codex / macOS)
-
-```bash
-mkdir -p ~/.agents/skills
-unzip -q ~/Downloads/Bioinformatics_SCI_Master_Skill_v1.zip \
-  -d ~/.agents/skills/
-# or: git clone https://github.com/mingeric/bioinformatics-sci-master \
-#       ~/.agents/skills/bioinformatics-sci-master
+```
+SKILL.md                                  execution rules, six-pass protocol
+references/
+  01-study-design-and-evidence.md         endpoints, cohorts, evidence tiers
+  02-methods-and-algorithms.md            method selection and what each can't prove
+  03-figures-and-design.md                publication layout rules
+  04-scientific-writing-and-review.md     manuscript style and review passes
+  05-release-and-quality-gates.md         release auditing, truthful status reporting
+  06-smc56-p1-profile.md                  SMC5/6 pan-cancer project (8 main + 4 suppl. figures)
+  07-verified-sources.md                  source papers, living standards
+  08-figure-panel-library.md              117 candidate figure panels
+scripts/
+  init_project.py                         project scaffolding
+  audit_release.py                        technical release audit
+templates/                                ledgers, figure budget, execution prompt
+agents/openai.yaml                        Codex interface metadata
 ```
 
-Then invoke in a Codex project:
+## What it enforces
+
+- No invented data of any kind — no patients, p-values, AUCs, DEGs or cell annotations. Every quantitative claim resolves to a source table, a script, and a sample denominator.
+- Leakage control: outcome-informed selection, preprocessing and tuning stay inside training folds; external cohorts stay untouched until the model is locked.
+- Evidence levels are labeled and never mixed. A CellChat edge is not a knockout. A drug-screen hit is not a therapeutic recommendation.
+- Writing follows results: tables → analyses → panels → legends → Results → Discussion → Abstract → title.
+- Statuses are honest. PARTIAL is reported as PARTIAL, and a scaffolded project is not a finished analysis.
+
+## The pipeline
+
+```mermaid
+flowchart LR
+    P0["PASS 0<br>audit what exists"] --> P1["PASS 1<br>one question, one endpoint"]
+    P1 --> P2["PASS 2<br>compute"]
+    P2 --> P3["PASS 3<br>model evaluation<br>nested CV / bootstrap"]
+    P3 --> P4["PASS 4<br>figures from source tables"]
+    P4 --> P5["PASS 5<br>write IMRaD, sync everything"]
+    P5 --> G{"audit_release.py"}
+    G -- PASS --> R["FINAL_SUBMISSION/"]
+    G -- FAIL --> P0
+```
+
+The decision rule behind every new analysis:
+
+```
+Question -> necessary input -> experimental/statistical unit -> comparison & confounders
+-> method -> quantitative estimand -> independent validation -> figure
+-> evidence classification -> manuscript claim
+```
+
+If a link is missing, the claim is dropped or downgraded rather than decorated.
+
+## Install
+
+```bash
+# from source
+git clone https://github.com/mingeric/bioinformatics-sci-master \
+  ~/.agents/skills/bioinformatics-sci-master
+
+# or grab the zip from Releases and unzip into ~/.agents/skills/
+```
+
+## Use
+
+In a Codex session:
 
 ```
 $bioinformatics-sci-master
@@ -51,42 +78,21 @@ Audit existing data and figures, run supported analyses,
 generate publication-grade PNGs, and synchronize the
 manuscript, methods, legends and evidence tables.
 
-For SMC5/6 P1: exactly 8 main + 4 supplementary figures.
-
 Validate the canonical release. Never invent results.
 ```
 
-A ready-to-paste task prompt is included at `templates/CODEX_EXECUTION_PROMPT.md`.
+`templates/CODEX_EXECUTION_PROMPT.md` has a longer version for pasting into a specific repository.
 
-## Tools included
+## The audit tool
 
-- `scripts/init_project.py` — project scaffolding (`analysis_plan.md`, `data_inventory.csv`, `cohort_ledger.csv`, `results/`, `figures/`, `scripts/`, `manuscript/`, `FINAL_SUBMISSION/`, …)
-- `scripts/audit_release.py` — technical integrity audit for one canonical release: manifest/evidence CSV schema checks, PNG signature + chunk-CRC validation, SHA256 verification. **Not** a scientific truth verifier — substantive human review of statistical/biological validity is still required.
+`audit_release.py` checks one canonical release: manifest and evidence CSV schemas, PNG signature and chunk CRCs, SHA256 against the manifest, no network and no nonstandard dependencies. It is a file-integrity gate, nothing more — it will happily pass a statistically wrong but well-formed release. Reviewing the statistics and biology stays with you.
 
-Tested behavior: empty project correctly triggers acceptance failure; 12-PNG integrity audit passes. This verifies tool behavior only — it does not mean any real biological analysis has been run for your project.
+Tested so far: an empty project fails the gate, a 12-PNG release passes. That validates the tool, not any biology.
 
-## Quick start
+## Data sources referenced
 
-```bash
-python scripts/init_project.py --root ./my-study   # scaffold
-# ... run your analyses ...
-python scripts/audit_release.py --root ./my-study  # gate report (PASS/FAIL)
-```
-
-## The decision rule behind every analysis
-
-```
-Question -> necessary input -> experimental/statistical unit -> comparison & confounders
--> method -> quantitative estimand -> independent validation -> figure
--> evidence classification -> manuscript claim
-```
-
-If any required component is missing, the claim is omitted/downgraded instead of fabricating or adding decorative analysis.
-
-## Module coverage
-
-TARGET · GDC/TCGA · GEO · ICGC · GTEx · HPA · CPTAC · ProteomeXchange · DepMap · GDSC · PRISM/CTRP · LINCS/CMap · Seurat/Scanpy · WGCNA · penalized Cox/logistic · RSF · XGBoost · SHAP · time-dependent ROC · IPCW Brier · calibration · net benefit · scTenifoldKnk · CellOracle · Geneformer · CellChat · PROGENy · DoRothEA
+TARGET, GDC/TCGA, GEO, ICGC, GTEx, HPA, CPTAC, ProteomeXchange, DepMap, GDSC, PRISM/CTRP, LINCS/CMap. Single-cell: Seurat/Scanpy, donor-level pseudobulk. Perturbation tools (scTenifoldKnk, CellOracle, Geneformer) are treated strictly as hypothesis generation, not validated knockouts.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT.
