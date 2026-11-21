@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bioinformatics SCI Master"
+  short_description: "Evidence-first multi-omics research, ML, figures and SCI writing"
+  default_prompt: "Use $bioinformatics-sci-master to inspect this project, identify the scientific question, execute evidence-supported analyses, render publication-grade PNG panels, reconcile Results/Methods/legends, and audit a canonical release. Never invent data or claim unfinished tasks are done."
